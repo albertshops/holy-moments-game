@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+<head>
+<title>Holy Moments</title>
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+<br>
+<br>
+<canvas id="gameCanvas" width="600" height="600"></canvas>
+<br>
+<!---
+ <iframe id="soundcloud" width="600" height="120" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/240109501&amp;color=ff5500&amp;auto_play=false&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false"></iframe>
+ --->
+
+<style>
+body {
+	background: #fc8;
+}
+
+iframe {
+	display: block;
+	margin: auto;
+}
+
+canvas {
+	border: #fff solid 0px;
+	display: block;
+	margin: auto;
+}
+</style>
+
+<script>
+
+var p = 150;
+var s = 4;
+var speed = 1;
+var bob = false;
+var headOffset;
+var beat = 428;
+var startTime = 0;
+var showSelection = true;
+var score = 0;
+var running = 0;
+
+var doughnutSong = new Audio('audio/donut.mp3');
+var handsSong = new Audio('audio/soft_hands.mp3');
+
+var arrows = [];
+var arrowImgs = [];
+for (var i = 0; i < 4; i++)
+	arrowImgs[i] = new Image();
+arrowImgs[0].src = 'sprites/left.png';
+arrowImgs[1].src = 'sprites/down.png';
+arrowImgs[2].src = 'sprites/up.png';
+arrowImgs[3].src = 'sprites/right.png';
+var outlines = new Image();
+outlines.src = 'sprites/outlines.png';
+
+var textImgs = [];
+for (var i = 0; i < 4; i++)
+	textImgs[i] = new Image();
+textImgs[0].src = 'sprites/miss.png';
+textImgs[1].src = 'sprites/perfect.png';
+textImgs[2].src = 'sprites/good.png';
+textImgs[3].src = 'sprites/almost.png';
+
+var songs = new Image();
+songs.src = 'sprites/songs.png';
+var dShadow = new Image();
+dShadow.src = 'sprites/doughnut_shadow.png';
+var sShadow = new Image();
+sShadow.src = 'sprites/soft_hands_shadow.png';
+
+var c = document.getElementById("gameCanvas");
+var ctx = c.getContext("2d");
+ctx.fillStyle = "#fc8";
+
+var stage = new Image();
+stage.src = 'sprites/stage.png';
+var al = new Image();
+al.src = 'sprites/al.png';
+var dave = new Image();
+dave.src = 'sprites/dave.png';
+var giles = new Image();
+giles.src = 'sprites/giles.png';
+
+var yourock = new Image();
+yourock.src = 'sprites/yourock.png';
+var yousuck = new Image();
+yousuck.src = 'sprites/yousuck.png';
+
+
+Array.prototype.remove = function(from, to) {
+	var rest = this.slice((to || from) + 1 || this.length);
+	this.length = from < 0 ? this.length + from : from;
+	return this.push.apply(this, rest);
+};
+
+var track = [
+];
+
+
+var millis = 0;
+var counter = 0;
+function update(t, dt) {
+	millis += dt;	
+	if (millis > beat) {
+		millis = millis % beat;
+		// flop bob
+		if (song == 'hands' && t < 53000 || song == 'doughnut' && t < 56000) {
+			bob = !bob;
+			if (bob)
+				headOffset = 1;
+			else
+				headOffset = 0;
+		}
+	}
+
+	// update arrow positions
+	for (var i = 0; i < arrows.length; i++) {
+		arrows[i].offset = ((arrows[i].t - t) / 40) * speed;
+		if (arrows[i].offset < -50) {
+			arrows.remove(i);
+		}
+	}
+
+	// create new arrows
+	if (counter < track.length && t > track[counter][0] - 3200) {    // 3200 : appears just above floor, 4000 : just below
+		newArrow(track[counter][0], track[counter][1]);
+		counter++;
+	}
+
+	// update text
+	for (var i = 0; i < words.length; i++) {
+		if (words[i] > 0) 
+			words[i] -= dt;
+		if (words[i] < 0)
+			words[i] = 0;
+	}
+}
+
+function drawArrows() {
+	for (var i = 0; i < arrows.length; i++)
+		ctx.drawImage(arrowImgs[arrows[i].n], 0, arrows[i].offset*s, p*s, p*s);	
+}
+
+function drawText(t) {
+	for (var i = 0; i < textImgs.length; i++) {
+		ctx.globalAlpha = Math.ceil(words[i]/50)/10;
+		ctx.drawImage(textImgs[i], 0, -56*s, p*s, p*s);
+		ctx.globalAlpha = 1;
+	}
+
+	if (song == 'hands' && t > 54000) { 
+		if (score >= 52)
+			ctx.drawImage(yourock, 0, 0, p*s, p*s)
+		else 
+			ctx.drawImage(yousuck, 0, 0, p*s, p*s)
+		setTimeout(main, 3000);
+	}
+	if (song == 'doughnut' && t > 57000) {
+		if (score >= 28)
+			ctx.drawImage(yourock, 0, 0, p*s, p*s)
+		else 
+			ctx.drawImage(yousuck, 0, 0, p*s, p*s)
+		setTimeout(main, 3000);
+	}
+}
+
+var lastTime = 0;
+function draw() {
+	var now = Date.now();
+	var dt = (now - lastTime);
+	lastTime = now;
+	var t = now - startTime;
+
+	update(t, dt);
+
+	ctx.fillRect(0, 0, p*s, p*s);
+
+	ctx.drawImage(outlines, 0, 0, p*s, p*s);
+
+	drawArrows();
+
+	ctx.drawImage(stage, 0, 0, p*s, p*s);
+	ctx.drawImage(al, 0, headOffset*s, p*s, p*s);
+	ctx.drawImage(giles, 0, headOffset*s, p*s, p*s);
+	ctx.drawImage(dave, 0, headOffset*s, p*s, p*s);
+
+	drawText(t);
+}
+
+function newArrow(t, n) {
+	var arrow = {};
+	arrow.n = n;
+	arrow.t = t;
+	arrow.offset = 150;
+	arrows.push(arrow);
+}
+
+
+var words = [0, 0, 0, 0];
+function renewText(dt) {
+	if (dt < 110) {
+		for (var i = 0; i < words.length; i++)
+			words[i]= 0;
+		if (dt < 30) {
+			words[1] = 500;	
+			score++;
+		} else if (dt < 80) {
+			words[2] = 500;	
+			score++;
+		} else if (dt < 110) {
+			words[3] = 500;	
+		}
+	} else {
+		words[0] = 500;
+	}
+}
+
+document.onkeydown = function(event) {
+	var kc = event.keyCode;
+	var a;
+	if (kc <= 40 && kc >= 37) {
+		if (kc == 37) a = 0;
+		if (kc == 38) a = 2;
+		if (kc == 39) a = 3;
+		if (kc == 40) a = 1;
+		var t = Date.now() - startTime;
+		var dt = 999;
+		for (var i = 0; i < arrows.length; i++) {
+			dt = Math.abs(arrows[i].t - t);
+			if (arrows[i].n == a && dt < 110) {
+				break;
+			}
+		}
+
+		if (song == 'hands' && t < 55000 || song == 'doughnut' && t < 58000)
+			renewText(dt);
+
+		return false;
+	}
+}
+
+function drawBand() {
+	ctx.fillRect(0, 0, p*s, p*s);
+	ctx.drawImage(stage, 0, 0, p*s, p*s);
+	ctx.drawImage(al, 0, 0, p*s, p*s);
+	ctx.drawImage(giles, 0, 0, p*s, p*s);
+	ctx.drawImage(dave, 0, 0, p*s, p*s);
+}
+
+function main() {
+	showSelection = true;
+	if (running != 0)
+		clearInterval(running)
+	drawBand();
+	ctx.drawImage(songs, 0, 0, p*s, p*s);
+}
+
+function doughnut() {
+	score = 0;
+	var arrow, lastArrow;
+	for (var i = 2; i < 43; i++) {
+		while (arrow == lastArrow)
+			arrow = Math.floor(Math.random()*4);
+		track.push([i * 1333.33333333 + 100, Math.floor(Math.random()*4)]);
+	}
+	song = 'doughnut';
+	beat = 333.33333333333333;
+	showSelection = false;
+	startTime = Date.now();
+	doughnutSong.play();
+	running = setInterval(draw, 40);
+}
+
+function hands() {
+	score = 0;
+	var arrow, lastArrow;
+	for (var i = 3; i < 79; i++) {
+		while (arrow == lastArrow)
+			arrow = Math.floor(Math.random()*4);
+		track.push([i * 666.6666666666 + 800, arrow]);
+		lastArrow = arrow;
+	}
+	song = 'hands';
+	beat = 166.666666666666667;;
+	showSelection = false;
+	startTime = Date.now();
+	handsSong.play();
+	running = setInterval(draw, 40);
+}
+
+c.addEventListener('mousemove', function(event) {
+	if (showSelection) {
+		var rect = c.getBoundingClientRect();
+		var x = event.clientX - rect.left;
+		var y = event.clientY - rect.top;
+
+		if (x > 104 && x < 496 && y > 113 && y < 250) {
+			drawBand();
+			ctx.drawImage(dShadow, 0, 0, p*s, p*s);
+			ctx.drawImage(songs, 0, 0, p*s, p*s);
+		} else if (x > 117 && x < 484 && y > 282 && y < 336) {
+			drawBand();
+			ctx.drawImage(sShadow, 0, 0, p*s, p*s);
+			ctx.drawImage(songs, 0, 0, p*s, p*s);
+		} else {
+			drawBand();
+			ctx.drawImage(songs, 0, 0, p*s, p*s);
+		}
+	}
+});
+
+c.addEventListener('mousedown', function(event) {
+	if (showSelection) {
+		var rect = c.getBoundingClientRect();
+		var x = event.clientX - rect.left;
+		var y = event.clientY - rect.top;
+
+		if (x > 104 && x < 496 && y > 113 && y < 250) {
+			doughnut();
+		} else if (x > 117 && x < 484 && y > 282 && y < 336) {
+			hands();
+		}
+	}
+});
+
+window.onload = main;
+
+</script>
+</body>
+</html>
