@@ -40,7 +40,7 @@ var beat = 428;
 var startTime = 0;
 var showSelection = true;
 var score = 0;
-var running = 0;
+var running = -1;
 
 var doughnutSong = new Audio('audio/donut.mp3');
 var handsSong = new Audio('audio/soft_hands.mp3');
@@ -156,15 +156,25 @@ function drawText(t) {
 			ctx.drawImage(yourock, 0, 0, p*s, p*s)
 		else 
 			ctx.drawImage(yousuck, 0, 0, p*s, p*s)
-		setTimeout(main, 3000);
+		setTimeout(stopUpdate, 600);
+		setTimeout(showMenu, 2500);
 	}
 	if (song == 'doughnut' && t > 57000) {
 		if (score >= 28)
 			ctx.drawImage(yourock, 0, 0, p*s, p*s)
 		else 
 			ctx.drawImage(yousuck, 0, 0, p*s, p*s)
-		setTimeout(main, 3000);
+		setTimeout(stopUpdate, 600);
+		setTimeout(showMenu, 2500);
 	}
+}
+
+function showMenu() {
+	showSelection = true;
+}
+
+function stopUpdate() {
+	clearInterval(running);
 }
 
 var lastTime = 0;
@@ -251,31 +261,31 @@ function drawBand() {
 }
 
 function main() {
-	showSelection = true;
-	if (running != 0)
-		clearInterval(running)
 	drawBand();
 	ctx.drawImage(songs, 0, 0, p*s, p*s);
 }
 
 function doughnut() {
 	score = 0;
+	showSelection = false;
+	running = setInterval(draw, 40);
 	var arrow, lastArrow;
 	for (var i = 2; i < 43; i++) {
 		while (arrow == lastArrow)
 			arrow = Math.floor(Math.random()*4);
-		track.push([i * 1333.33333333 + 100, Math.floor(Math.random()*4)]);
+		track.push([i * 1333.33333333 + 100, arrow]);
+		lastArrow = arrow;
 	}
 	song = 'doughnut';
 	beat = 333.33333333333333;
-	showSelection = false;
 	startTime = Date.now();
 	doughnutSong.play();
-	running = setInterval(draw, 40);
 }
 
 function hands() {
 	score = 0;
+	showSelection = false;
+	running = setInterval(draw, 40);
 	var arrow, lastArrow;
 	for (var i = 3; i < 79; i++) {
 		while (arrow == lastArrow)
@@ -285,10 +295,8 @@ function hands() {
 	}
 	song = 'hands';
 	beat = 166.666666666666667;;
-	showSelection = false;
 	startTime = Date.now();
 	handsSong.play();
-	running = setInterval(draw, 40);
 }
 
 c.addEventListener('mousemove', function(event) {
