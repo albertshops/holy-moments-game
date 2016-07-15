@@ -96,9 +96,7 @@ Array.prototype.remove = function(from, to) {
 	return this.push.apply(this, rest);
 };
 
-var track = [
-];
-
+var track = [];
 
 var millis = 0;
 var counter = 0;
@@ -144,6 +142,7 @@ function drawArrows() {
 		ctx.drawImage(arrowImgs[arrows[i].n], 0, arrows[i].offset*s, p*s, p*s);	
 }
 
+var timeout = -1;
 function drawText(t) {
 	for (var i = 0; i < textImgs.length; i++) {
 		ctx.globalAlpha = Math.ceil(words[i]/50)/10;
@@ -156,25 +155,35 @@ function drawText(t) {
 			ctx.drawImage(yourock, 0, 0, p*s, p*s)
 		else 
 			ctx.drawImage(yousuck, 0, 0, p*s, p*s)
-		setTimeout(stopUpdate, 600);
-		setTimeout(showMenu, 2500);
+		if (timeout == -1) {
+			timeout = setTimeout(stopUpdate, 600);
+			setTimeout(showMenu, 2500);
+		}
 	}
 	if (song == 'doughnut' && t > 57000) {
 		if (score >= 28)
 			ctx.drawImage(yourock, 0, 0, p*s, p*s)
 		else 
 			ctx.drawImage(yousuck, 0, 0, p*s, p*s)
-		setTimeout(stopUpdate, 600);
-		setTimeout(showMenu, 2500);
+		if (timeout == -1) {
+			timeout = setTimeout(stopUpdate, 600);
+			setTimeout(showMenu, 2500);
+		}
 	}
 }
 
 function showMenu() {
 	showSelection = true;
+	timeout = -1;
 }
 
 function stopUpdate() {
 	clearInterval(running);
+	track = [];
+	arrows = [];
+	counter = 0;
+	millis = 0;
+	lastTime = 0;
 }
 
 var lastTime = 0;
@@ -266,7 +275,6 @@ function main() {
 }
 
 function doughnut() {
-	score = 0;
 	showSelection = false;
 	running = setInterval(draw, 40);
 	var arrow, lastArrow;
@@ -283,7 +291,6 @@ function doughnut() {
 }
 
 function hands() {
-	score = 0;
 	showSelection = false;
 	running = setInterval(draw, 40);
 	var arrow, lastArrow;
